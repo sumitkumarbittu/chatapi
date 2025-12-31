@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Chat</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="title"></div>
+      <div id="renderPill" class="pill pill-bad"><span class="dot"></span><span class="label">Render</span></div>
+    </div>
+
+    <div class="actions">
+      <div class="seg">
+        <button id="modeDb" class="seg-btn" type="button">DB</button>
+        <button id="modeCsv" class="seg-btn" type="button">CSV</button>
+      </div>
+
+      <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle theme">◐</button>
+      <button id="refreshBtn" class="icon-btn" type="button" aria-label="Refresh"><span class="refresh-icon">⟳</span></button>
+      <button id="settingsBtn" class="btn" type="button">⚙️</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="left">
+      <div id="usersHeader" class="panel-header">Users</div>
+      <div id="usersList" class="users"></div>
+    </section>
+
+    <div id="divider" class="divider" role="separator" aria-orientation="vertical" tabindex="0"></div>
+
+    <section class="right">
+      <div class="chat-header">
+        <div>
+          <div id="chatTitle" class="chat-title">Select a user</div>
+          <div id="chatSubtitle" class="chat-subtitle">&nbsp;</div>
+        </div>
+        <div class="chat-meta">
+          <div class="row">
+            <button id="refreshUserFiltered" class="icon-btn" type="button" aria-label="Refresh current user (after filter)"><span class="refresh-icon">⏳</span></button>
+            <button id="refreshUserAll" class="icon-btn" type="button" aria-label="Refresh current user (no filter)"><span class="refresh-icon">↻</span></button>
+          </div>
+          <div id="modeHint" class="hint"></div>
+        </div>
+      </div>
+
+      <div id="messages" class="messages"></div>
+
+      <div class="composer">
+        <button id="attachBtn" class="icon-btn" type="button" aria-label="Add attachment">📎</button>
+        <input id="messageInput" class="composer-input" type="text" placeholder="Type a message" autocomplete="off" />
+        <button id="sendBtn" class="icon-btn primary" type="button" aria-label="Send">➤</button>
+      </div>
+      <input id="fileInput" type="file" hidden accept="application/pdf,image/png,image/jpg,image/jpeg" />
+    </section>
+  </main>
+
+  <div id="settingsModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-title">Settings</div>
+        <button id="settingsClose" class="icon-btn" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <div class="grid">
+        <div class="field db-only">
+          <label>Postgres URL</label>
+          <div class="row">
+            <input id="pgUrl" type="text" placeholder="postgres://..." />
+            <button id="pgEdit" class="icon-btn" type="button" aria-label="Edit">✎</button>
+          </div>
+          <div class="row">
+            <button id="pgSave" class="btn" type="button">Save connection</button>
+            <div id="pgStatus" class="pill pill-bad">✕ Not connected</div>
+          </div>
+        </div>
+
+        <div class="field db-only">
+          <label>Table name</label>
+          <div class="row">
+            <input id="tableName" type="text" value="messages" />
+            <button id="tableSet" class="btn" type="button">Set</button>
+            <div id="tableStatus" class="pill pill-good">✓ Using messages</div>
+            <button id="tableEdit" class="icon-btn" type="button" aria-label="Edit">✎</button>
+          </div>
+          <div class="subhint">Used in DB mode only.</div>
+        </div>
+
+        <div class="field">
+          <label>Table attributes (comma separated)</label>
+          <input id="tableCols" type="text" value="id, user_identifier, sender, admin_name, message, file, created_at" />
+          <div class="subhint">Must include: user_identifier, sender, message, created_at. file optional.</div>
+        </div>
+
+        <div class="field">
+          <label>Show messages after (ISO-8601)</label>
+          <input id="afterDate" type="date" />
+          <div class="row">
+            <button id="afterSet" class="btn" type="button">Set</button>
+          </div>
+          <div class="subhint">Applied on refresh.</div>
+        </div>
+
+        <div class="field">
+          <label>Admin name</label>
+          <div class="row">
+            <input id="adminName" type="text" placeholder="e.g. Sumit" />
+            <button id="adminSet" class="btn" type="button">Set</button>
+          </div>
+        </div>
+
+        <div class="field db-only">
+          <label>Auto refresh (seconds)</label>
+          <div class="row">
+            <input id="autoRefresh" type="number" min="1" step="1" placeholder="(empty)" />
+            <button id="autoSet" class="btn" type="button">Set</button>
+            <button id="autoClear" class="btn ghost" type="button">Clear</button>
+          </div>
+          <div class="subhint">If empty: behaves like CSV mode (manual refresh only).</div>
+        </div>
+
+        <div class="field csv-only">
+          <label>CSV upload (chat history viewer)</label>
+          <div class="row">
+            <input id="csvFileName" type="text" value="" placeholder="Choose a file" disabled />
+            <button id="csvPick" class="btn" type="button">Choose CSV</button>
+            <button id="csvLoad" class="btn" type="button">Load CSV</button>
+          </div>
+          <div class="row">
+            <button id="csvDownload" class="btn ghost" type="button">Download CSV</button>
+          </div>
+          <div class="subhint">CSV stays in session cache until refresh/reload.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="preview" class="preview hidden">
+    <div class="preview-card">
+      <div class="preview-head">
+        <div id="previewTitle" class="preview-title">Attachment</div>
+        <div class="preview-actions">
+          <button id="previewDownload" class="btn ghost" type="button">Download</button>
+          <button id="previewClose" class="icon-btn" type="button">✕</button>
+        </div>
+      </div>
+      <div id="previewBody" class="preview-body"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <input id="csvInput" type="file" hidden accept="text/csv,.csv" />
+
+  <script src="script.js"></script>
+</body>
+</html>
