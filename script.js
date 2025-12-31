@@ -1,7 +1,7 @@
 // Set this to your Render web service base, e.g. https://your-service.onrender.com
 // If empty, DB features will be disabled.
 // Default: same-origin (works when serving frontend via the same domain as the backend).
-const API_BASE = "http://localhost:8000";
+const API_BASE = "https://chatapi-fgqu.onrender.com";
 
 // App should start fresh on reload (no persistence).
 try {
