@@ -161,10 +161,6 @@ def api_messages_send():
             cols = ["id", "user_identifier", "sender", "admin_name", "message", "file", "created_at"]
         _validate_columns(cols)
 
-        # Get dynamic user identifier column name
-        user_identifier_col = body.get("user_identifier_col", "user_identifier").strip()
-        _validate_ident(user_identifier_col, "user_identifier_col")
-
         user_identifier = (body.get("user_identifier") or "").strip()
         sender = (body.get("sender") or "admin").strip()
         admin_name = (body.get("admin_name") or "").strip()
@@ -188,9 +184,8 @@ def api_messages_send():
         else:
             created_at_dt = _now_utc()
 
-        # Build payload with dynamic user identifier column
         payload = {
-            user_identifier_col: user_identifier,  # Use dynamic column name
+            "user_identifier": user_identifier,
             "sender": sender,
             "admin_name": admin_name,
             "message": message,
@@ -206,14 +201,14 @@ def api_messages_send():
                 insert_vals.append(payload[c])
 
         if not insert_cols:
-            raise ValueError(f"No insertable columns found. Ensure columns include {user_identifier_col}, sender, message, created_at")
+            raise ValueError("No insertable columns found. Ensure columns include user_identifier, sender, message, created_at")
 
         with _connect(db_url) as conn:
             with conn.cursor() as cur:
                 q = sql.SQL("insert into {tbl} ({cols}) values ({vals}) returning *").format(
                     tbl=sql.Identifier(table),
                     cols=sql.SQL(",").join(insert_cols),
-                    vals=sql.SQL(",").join(sql.Placeholder() for _ in insert_vals),
+                    vals=sql.SQL(",").join(sql.Placeholder() for _ in insert_cols),
                 )
                 cur.execute(q, insert_vals)
                 row = cur.fetchone()
